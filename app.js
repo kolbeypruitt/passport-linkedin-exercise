@@ -11,7 +11,7 @@ require('dotenv').load();
 passport.use(new LinkedInStrategy({
   clientID: process.env.LINKEDIN_KEY,
   clientSecret: process.env.LINKEDIN_SECRET,
-  callbackURL: "http://127.0.0.1:3000/auth/linkedin/callback",
+  callbackURL: process.env.HOST + "/auth/linkedin/callback",
   scope: ['r_basicprofile'],
 }, function(accessToken, refreshToken, profile, done) {
   // asynchronous verification, for effect...
