@@ -6,10 +6,11 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 var LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
+require('dotenv').load();
 
 passport.use(new LinkedInStrategy({
-  clientID: '780mmkfhrks91x' /*LINKEDIN_KEY*/,
-  clientSecret: 'd6LtBG6SuMmog4Rh' /*LINKEDIN_SECRET*/,
+  clientID: process.env.LINKEDIN_KEY,
+  clientSecret: process.env.LINKEDIN_SECRET,
   callbackURL: "http://localhost:3000/auth/linkedin/callback",
   scope: ['r_emailaddress', 'r_basicprofile'],
 }, function(accessToken, refreshToken, profile, done) {
@@ -41,6 +42,14 @@ app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
   successRedirect: '/',
   failureRedirect: '/login'
 }));
+// above app.use('/', routes);...
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(user, done) {
+  done(null, user)
+});
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
