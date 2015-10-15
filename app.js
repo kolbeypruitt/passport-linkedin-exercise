@@ -2,27 +2,23 @@ var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
+var routes = require('./routes/index');
+var users = require('./routes/users');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var cookieSession = require('cookie-session')
 var passport = require('passport');
+// var authRoutes = require('./routes/auth');
 var LinkedInStrategy = require('passport-linkedin-oauth2').Strategy;
-var session = require('cookie-session')
+
 require('dotenv').load();
 var app = express();
 
 
-var routes = require('./routes/index');
-var users = require('./routes/users');
 
 
 // above app.use('/', routes);...
-passport.serializeUser(function(user, done) {
-  done(null, user);
-});
 
-passport.deserializeUser(function(user, done) {
-  done(null, user)
-});
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -37,18 +33,17 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(passport.initialize());
-app.use(passport.session());
-
-app.use(session({
+app.use(cookieSession({
   name: 'session',
   keys: [
   process.env.SESSION_KEY1,
   process.env.SESSION_KEY2,
-  process.env.SESSION_KEY3
+  process.env.SESSION_KEY3,
   ]
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
 
 
 passport.use(new LinkedInStrategy({
@@ -57,12 +52,24 @@ passport.use(new LinkedInStrategy({
   callbackURL: process.env.HOST + "/auth/linkedin/callback",
   scope: ['r_emailaddress', 'r_basicprofile'],
   state: true
-}, function(accessToken, refreshToken, profile, done) {
-  done(null, {id: profile.id, displayName: profile.displayName})
-}));
+},
+  function(accessToken, refreshToken, profile, done) {
+    done(null, {id: profile.id, displayName: profile.displayName})
+    console.log(profile);
+  }
+));
+
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(user, done) {
+  done(null, user)
+});
 
 // right above app.use('/', routes);
 app.use(function (req, res, next) {
+  // console.log(res.locals);
   res.locals.user = req.user
   next()
 })
@@ -70,12 +77,7 @@ app.use(function (req, res, next) {
 app.use('/', routes);
 app.use('/users', users);
 
-app.get('/auth/linkedin',
-  passport.authenticate('linkedin', { state: 'SOME STATE'  }),
-  function(req, res){
-    // The request will be redirected to LinkedIn for authentication, so this
-    // function will not be called.
-  });
+app.get('/auth/linkedin', passport.authenticate('linkedin'));
 
 app.get('/auth/linkedin/callback', passport.authenticate('linkedin', {
   successRedirect: '/',
